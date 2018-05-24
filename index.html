@@ -1,0 +1,270 @@
+<!doctype html>
+<html class="no-js">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="description" content="">
+		<meta name="keywords" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<title>黑猪360</title>
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="Cache-Control" content="no-siteapp" />
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<link rel="stylesheet" href="assets/css/amazeui.css">
+		<link rel="stylesheet" href="assets/css/app.css">
+		<link rel="stylesheet" href="assets/css/iconfont.css">
+		<script type="text/javascript" src="assets/js/jquery.min.js"></script>
+		<script type="text/javascript">
+			var apiRoot = "https://zhaohaiyu.cn/wx/";
+			//var apiRoot = "http://192.168.1.28:8082/";
+			var wxUrl = apiRoot+"getBlockChain";
+			var wxSimpleUrl = apiRoot+"getSimpleBlockChain";
+			var state = undefined;
+			var q = undefined;
+            $(function(){
+            	state = getURLParameter("state");
+            	q = getURLParameter("q");
+            	//测试使用-------
+            	if(!state){
+            		state = "30578DB706AAFD41D06716ABE1BD7DAB";
+            		//本地测试
+            		//state = "0634034E44EE5C0F5BC6DEA9AC4E9E1B";
+            	}
+            	if(!q){
+            		q = "43101E2D2CD0C67C0D438473EFA814FD";
+            		//本地测试
+            		//q = "BF3C0294384CC9847928A11AECA26D76";
+            	}
+            	//测试使用-------
+            	getAjax();
+                $('#footer').hide();
+                $('.am-container').hide();
+            	$('.foot').click(function(){
+            		    $('.animation').fadeOut(function(){
+            			$('.am-container').fadeIn();
+            			$('#footer').fadeIn();
+            		});
+            	});
+            });
+			//点击族谱
+			function clickGenealogy(pigId){
+				getSimpleAjax(pigId);
+			}
+			function getURLParameter(name) { 
+				return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null; 
+			}
+			//查询详细信息
+			function getAjax(){
+			 	$.ajax({ 
+				   	type: 'POST', 
+				   	data: {state:state,q:q},
+				   	url: wxUrl,
+			        success: function (data) {
+			        	if(data.errno == 0){
+			        		$("#qrCodeId").html(state);
+			        		console.log(data.data);
+			        		//品种
+			        		$("#varieties_id").html(data.data.varieties);
+			        		//性别 0：公 1：母
+			        		$("#pigGender_id").html(data.data.pigGender == 0?"公":"母");
+			        		//出生
+			        		$("#birth_id").html(data.data.birth);
+			        		//生长周期
+			        		$("#growthCycle_id").html(data.data.growthCycle);
+			        		//父亲
+			        		$("#pigFather_id").html(data.data.pigFather);
+			        		//母亲
+			        		$("#pigMother_id").html(data.data.pigMother);
+			        		//区块链地址
+			        		$("#blockChain_id").html(data.data.blockChain);
+			        		//ID号码
+			        		$("#idNumber_id").html(data.data.idNumber);
+			        		
+			        		//兄弟姐妹个数
+			        		$("#brotherNumbers_id").html(data.data.brotherNumbers);
+			        		
+			        		//族谱开始-----
+			        		$("#father_id").html('<a onclick="clickGenealogy('+data.data.genealogy[0]+')">'+data.data.genealogy[0]+'</a>');
+			        		$("#mother_id").html('<a onclick="clickGenealogy('+data.data.genealogy[1]+')">'+data.data.genealogy[1]+'</a>');
+			        		$("#grandpa_id").html('<a onclick="clickGenealogy('+data.data.genealogy[2]+')">'+data.data.genealogy[2]+'</a>');
+			        		$("#grandma_id").html('<a onclick="clickGenealogy('+data.data.genealogy[3]+')">'+data.data.genealogy[3]+'</a>');
+			        		$("#grandpa_m_id").html('<a onclick="clickGenealogy('+data.data.genealogy[4]+')">'+data.data.genealogy[4]+'</a>');
+			        		$("#grandma_m_id").html('<a onclick="clickGenealogy('+data.data.genealogy[5]+')">'+data.data.genealogy[5]+'</a>');
+							//族谱结束-----
+							
+							//转栏
+							$("#hurdles_id").html();
+							$("#hurdles_id").append('<li>出生：<p>'+data.data.birth+'</p></li>');
+							var changeColumns = data.data.changeColumns;
+							if(changeColumns){
+								for(var i in changeColumns){
+			        			$("#hurdles_id").append('<li>转栏：<p>'+changeColumns[i].columnTime+'</p></li>');
+			        			}
+							}
+							
+							//检测报告
+							$("#quarantine_id").html();
+							var quarantine = data.data.quarantine;
+							if(quarantine){
+								for(var i in quarantine){
+			        			$("#quarantine_id").append('<li>'+quarantine[i].key+':'+quarantine[i].value+'</li>');
+			        			}
+							}
+							
+							//分享头像
+							$("#shareImgUrl_id").html();
+							var shareImgUrl = data.data.shareImgUrl;
+							if(shareImgUrl){
+								for(var i in shareImgUrl){
+									var div = '<div style="width:60px; height:60px; border-radius:100%; overflow:hidden;">'+
+												'<img style="width:60px; height:60px;" src="'+shareImgUrl[i]+'"/></div>';
+			        				$("#shareImgUrl_id").append(div);
+			        			}
+							}
+			        	}else if(data.errno == 401){
+			        		alert("过期的，请重新扫码");
+			        	}else{
+			        		alert("参数错误");
+			        	}
+			       },
+			       error:function(data,type, err){  
+			             console.log("ajax错误类型："+type);  
+			             console.log(err);
+			       }
+				   });
+			 }
+			//点击族谱查询简单信息
+			function getSimpleAjax(pigId){
+			 	$.ajax({ 
+				   	type: 'POST', 
+				   	data: {pigId:pigId,q:q},
+				   	url: wxSimpleUrl,
+			        success: function (data) {
+			        	if(data.errno == 0){
+			        		//品种
+			        		let varieties = data.data.varieties;
+			        		//性别 0：公 1：母
+			        		let pigGender = data.data.pigGender == 0?"公":"母";
+			        		//出生
+			        		let birth = data.data.birth;
+			        		//父亲
+			        		let pigFather = data.data.pigFather;
+			        		//母亲
+			        		let pigMother = data.data.pigMother;
+			        		//区块链地址
+			        		let blockChain = data.data.blockChain;
+			        		//ID号码
+			        		let idNumber = data.data.idNumber;
+			        		let s = '[身份信息]{品种：'+varieties+';性别：'+pigGender+';出生：'+birth+';父亲：'+pigFather+';母亲：'+pigMother+';区块链地址：'+blockChain+';ID号码：'+idNumber+'}';
+			        		alert(s);
+			        	}else if(data.errno == 401){
+			        		alert("过期的，请重新扫码");
+			        	}else{
+			        		alert("参数错误");
+			        	}
+			       },
+			       error:function(data,type, err){  
+			             console.log("ajax错误类型："+type);  
+			             console.log(err);
+			       }
+			    });
+			}
+		</script>
+	</head>
+	<body>
+		<div class="animation">
+			<br><br>
+              <div class="animate">
+              	<div class="scan">
+                      <img src="images/pig.png">
+                      <div class="scaning_1">
+                          <img src="images/scan_1.png">
+                      </div>
+                      <div class="scaning_2">
+                          <img src="images/scan_2.png">
+                      </div>
+              	</div>
+                 <div class="data_1">
+                      <ul>
+                      	<li>检测中...</li>
+                        <li>Detecting...</li>
+                      </ul>
+                 </div>
+                 <div class="data_2">
+                      <ul>
+                          <li>区块链信息获取中...</li>
+                          <li>信息校验中...</li>
+                      </ul>
+                 </div>
+                 <div class="data_3">
+                     <ul>
+	                     <li style="font-size:14px;color:#000;">您查询的二维码序列号为<li>
+	                     <li style="color:green;" id="qrCodeId"><li>
+	                     <li style="font-size:16px;color:#79bc1f;font-weight:bold;" id="explain_id">二维码已在区块中获取，是正品涪陵黑猪肉</li>              
+                     </ul>
+                 </div>
+              </div>
+              <div class="foot">
+                 <p>点击了解详情</p>
+              </div>
+		</div>
+		<div class="am-container">
+			<div class="am-g">
+				<div class="am-u-sm-12 am-text-center plus-mar-top plus-pad-lr ">
+					黑猪360
+				</div>
+				
+				<div class="am-u-sm-12">
+					身份证
+					<ul>
+                      	<li>品牌名称：<p id="varieties_id"></p></li>
+                        <li>性别：<p id="pigGender_id"></p></li>
+                        <li>出生：<p id="birth_id"></p></li>
+                        <li>生长周期：<p id="growthCycle_id"></p></li>
+                        <li>父亲：<p id="pigFather_id"></p></li>
+                        <li>母亲：<p id="pigMother_id"></p></li>
+                        <li>区块链地址：<p id="blockChain_id"></p></li>
+                        <li>ID号码：<p id="idNumber_id"></p></li>
+                    </ul>
+					
+				</div>
+				<div class="am-u-sm-12 plus-mar-top2">
+					族谱溯源（id不显示，作为请求参数id发送使用，存在空的现象）
+					<div>
+						爷爷<span id="grandpa_id"></span>----奶奶<span id="grandma_id"></span>---|
+						|---外公<span id="grandpa_m_id"></span>----外婆<span id="grandma_m_id"></span>
+					</div>
+					<div>
+						父(<span id="father_id"></span>)------------母(<span id="mother_id"></span>)
+					</div>
+					<div>
+						我(我有<span id="brotherNumbers_id"></span>个兄弟姐妹)
+					</div>
+					
+					
+				</div>
+				<div class="am-u-sm-12 plus-mar-top1 am-animation-slide-bottom">
+					转栏
+					<ul id="hurdles_id">
+                        
+                    </ul>
+				</div>
+				<div class="am-u-sm-12 plus-mar-top4 am-animation-scale-up">
+					检测报告
+					<ul id="quarantine_id"></ul>
+				</div>
+				<div class="am-u-sm-12 am-animation-fade">
+				</div>
+				<div class="am-u-sm-12">
+					分享
+					<div id="shareImgUrl_id">
+						
+					</div>
+				</div>
+			</div>
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/amazeui.min.js"></script>
+	</body>
+</html>
